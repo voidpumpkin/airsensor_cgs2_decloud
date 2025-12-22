@@ -1,6 +1,11 @@
 # QingPing CGS2 De-cloud
 
+
 QingPing CGS2 is a rather stylish little air quality monitor. It has all the nice sensors you might want (CO2, PM2.5, PM10 , temperature, humidity) and then some (noise, eTVOC...). It's all packaged in a nice looking device, with a colour touch screen, built in battery and WiFi. 
+
+
+![main](img/main.jpg)
+
 
 WiFi you say? Is that safe? Wonder what it would do if we connect it to the Internet... Actually, I'd rather not find out, so I did a little bit of digging and figured out how to get a root shell on the device, change the settings and get it to talk to my MQTT server directly without sending a single packet out of my local network. 
 
@@ -17,7 +22,7 @@ A little bit of digging reveals that his device actually/sort of runs Android, w
 
 This gets you into the `Developer options` menu. Scroll all the way down and you'll see a way to enable `debug mode` and `adb shell`. 
 
-<>
+![debug](img/debug.jpg)
 
 
 As easy as possible. Enable and reboot the device. When you connect the USB-C cable, it will enumerate as QingPing device. Install ADB on your linux machine and start a root shell by running:
@@ -187,6 +192,8 @@ We'll use mosquitto as an MQTT server to receive updates from the device, Telegr
 ```
 
 Use `docker-compose` to start up all the containers on your server. Make sure the device is configured to use the correct IP address everywhere (in `/etc/hosts` and in `settings.ini`), reboot the device and it should start reporting. 
+
+![main](img/grafana.png)
 
 
 Note: sometimes the QingSnow2App start up before the WiFi connects, in which case it might not find the MQTT server which causes an error. It will still report the data, but intermitently. I should introduce a delay somewhere to account for this. 
