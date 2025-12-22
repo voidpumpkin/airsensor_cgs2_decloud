@@ -1,7 +1,7 @@
-# QingPing CGS2 De-cloud
+# QingPing CGS2 De-cloud - making an air quality monitor ours
 
 
-QingPing CGS2 is a rather stylish little air quality monitor. It has all the nice sensors you might want (CO2, PM2.5, PM10 , temperature, humidity) and then some (noise, eTVOC...). It's all packaged in a nice looking device, with a colour touch screen, built in battery and WiFi. 
+QingPing Air Quality Monitor Gen 2 (also known as CGS2) is a rather stylish little air quality monitor. It has all the nice sensors you might want (CO2, PM2.5, PM10 , temperature, humidity) and then some (noise, eTVOC...). It's all packaged in a nice looking device, with a colour touch screen, built in battery and WiFi. In this short writeup, we'll untether it from the cloud and make it report the data to us. 
 
 
 ![main](img/main.jpg)
