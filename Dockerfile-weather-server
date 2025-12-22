@@ -1,0 +1,8 @@
+FROM python:3.12
+
+WORKDIR /app
+COPY ./weather_server/requirements.txt /app
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+RUN openssl req -x509 -newkey rsa:2048 -keyout /tmp/key.pem -out /tmp/cert.pem -days 365 -nodes -subj "/CN=weather"  
