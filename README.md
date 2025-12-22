@@ -9,15 +9,15 @@ QingPing Air Quality Monitor Gen 2 (also known as CGS2) is a rather stylish litt
 
 WiFi you say? Is that safe? Wonder what it would do if we connect it to the Internet... Actually, I'd rather not find out, so I did a little bit of digging and figured out how to get a root shell on the device, change the settings and get it to talk to my MQTT server directly without sending a single packet out of my local network. 
 
-There is an existing way to get this device to log data to your custom MQTT server, but you have to first create accound and ask the manufacturer nicely. Doing it yourself, as outlined in this guide, is simpler, IMHO. QingPing were nice enough to make things easy for us and this didn't require as much reverse engineering as some of my other projects. 
+There is an existing way to get this device to log data to your custom MQTT server, but you have to first create account and ask the manufacturer nicely. Doing it yourself, as outlined in this guide, is simpler, IMHO. QingPing were nice enough to make things easy for us and this didn't require as much reverse engineering as some of my other projects. 
 
-So, if you got one of these for Christmass, do not connect it to the internet, but follow along as we explore the inner workings of the device and get it to talk to us instead of QingPing cloud. 
+So, if you got one of these for Christmas, do not connect it to the internet, but follow along as we explore the inner workings of the device and get it to talk to us instead of QingPing cloud. 
 
 Note: Robert Ying already did an awesome job finding a firmware update vulnerability that could serve as an alternative way of getting a shell. Read about it [here](https://robertying.com/post/qingping-cgs1-home-assistant/). 
 
 # Getting a shell
 
-As far as interfaces go, we have a touch screen and a USB-C port. Connecting to the USB port only begings to charge the device, it doesn't enumerate as anything. 
+As far as interfaces go, we have a touch screen and a USB-C port. Connecting to the USB port only begins to charge the device, it doesn't enumerate as anything. 
 
 A little bit of digging reveals that his device actually/sort of runs Android, which makes sense. A little bit more digging through the firmware and the main application (`QingSnow2App`) shows a few hints that the old "developer mode" Android trick might work on this device, too. Go to `Settings->About` and press 7 times on the `Device Name` line. 
 
@@ -34,7 +34,7 @@ adb shell
 
 This will drop you into a BusyBox shell as root and we can start snooping around. 
 
-## Disabling Internet accesss
+## Disabling Internet access
 
 Before we connect the thing to WiFi, let's first implement some preventative measures. Execute the following commands (see comments as to why):
 
@@ -79,7 +79,7 @@ Most important part above is preventing the device from talking to the Internet.
 ## SSH access
 
 After you've done the above and the device connects to the WiFi, you can access it via `ssh`. 
-Root login is permited, and the password is `rockchip`:
+Root login is permitted, and the password is `rockchip`:
 ```
  $ ssh root@192.168.1.189
 
@@ -94,7 +94,7 @@ We can ditch the `adb` shell.
 If you dig around the system, you'll quickly figure out how things work. Long story short, there's a `settings.ini` file in `/data/etc/` that contains settings for the QingSnow2App. You'll probably want to edit those (kill the watchdog and QingSnow2App as before before changing it) to include something like:
 
 ```
-# address of your MQTT server, data sampling interval and reporting itnerval
+# address of your MQTT server, data sampling interval and reporting interval
 [192.168.1.121]
 save_history_interval=60
 sync_history_interval=300
@@ -170,7 +170,7 @@ Before deploying this in a container, be sure to update the `LAT` and `LONG` for
 NOTE: Before you deploy this, make sure to change all the secrets in `docker-compose.yaml` and in various other config files. These are default values taken from the source repo and I don't want you to get owned if your server ends up online. 
 
 
-The whole reason for doing this is that I wanted to log measurements over time. The following settup is a complete overkill, but it's so easy to set up with containers that I couldn't resist.
+The whole reason for doing this is that I wanted to log measurements over time. The following setup is a complete overkill, but it's so easy to set up with containers that I couldn't resist.
 
 We'll use mosquitto as an MQTT server to receive updates from the device, Telegraf to stream those updates into an InfluxDB which will be queried and displayed by Grafana. The trickiest bit here was to figure out the Telegraf config, all the rest is simple. You'll need to adjust it for your device as it will likely have a different ID:
 
@@ -197,7 +197,7 @@ Use `docker-compose` to start up all the containers on your server. Make sure th
 ![main](img/grafana.png)
 
 
-Note: sometimes the QingSnow2App start up before the WiFi connects, in which case it might not find the MQTT server which causes an error. It will still report the data, but intermitently. I should introduce a delay somewhere to account for this. 
+Note: sometimes the QingSnow2App start up before the WiFi connects, in which case it might not find the MQTT server which causes an error. It will still report the data, but intermittently. I should introduce a delay somewhere to account for this. 
 
 
 
