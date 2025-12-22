@@ -13,6 +13,7 @@ There is an existing way to get this device to log data to your custom MQTT serv
 
 So, if you got one of these for Christmass, do not connect it to the internet, but follow along as we explore the inner workings of the device and get it to talk to us instead of QingPing cloud. 
 
+Note: Robert Ying already did an awesome job finding a firmware update vulnerability that could serve as an alternative way of getting a shell. Read about it [here](https://robertying.com/post/qingping-cgs1-home-assistant/). 
 
 # Getting a shell
 
