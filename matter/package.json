@@ -1,0 +1,22 @@
+{
+  "name": "qp-cgs2-matter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Exposes the de-clouded Qingping CGS2 air quality monitor as a Matter-over-WiFi Air Quality Sensor",
+  "type": "module",
+  "main": "src/qp-air-quality.mjs",
+  "scripts": {
+    "start": "node src/qp-air-quality.mjs",
+    "build": "esbuild src/qp-air-quality.mjs --bundle --platform=node --target=node20 --format=esm --outfile=dist/qp-air-quality.mjs --alias:bun:sqlite=./build/sqlite-stub.mjs --alias:node:sqlite=./build/sqlite-stub.mjs --banner:js=\"import{createRequire as ___cr}from'node:module';import{fileURLToPath as ___f}from'node:url';import{dirname as ___d}from'node:path';const require=___cr(import.meta.url);const __filename=___f(import.meta.url);const __dirname=___d(__filename);\"",
+    "deploy": "npm run build && ./deploy.sh"
+  },
+  "dependencies": {
+    "@matter/main": "0.17.9"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

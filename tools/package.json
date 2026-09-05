@@ -1,0 +1,24 @@
+{
+  "name": "qp-cgs2-matter-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway matter.js controller to bring up / verify the CGS2 Matter node and hand it to Apple Home",
+  "bin": {
+    "qp-ctl": "./qp-ctl.mjs"
+  },
+  "scripts": {
+    "build": "esbuild qp-ctl.mjs --bundle --platform=node --target=node20 --format=esm --outfile=dist/qp-ctl.mjs --alias:bun:sqlite=./build/sqlite-stub.mjs --alias:node:sqlite=./build/sqlite-stub.mjs --banner:js=\"import{createRequire as ___cr}from'node:module';import{fileURLToPath as ___f}from'node:url';import{dirname as ___d}from'node:path';const require=___cr(import.meta.url);const __filename=___f(import.meta.url);const __dirname=___d(__filename);\"",
+    "deploy": "npm run build && ./deploy-ctl.sh"
+  },
+  "dependencies": {
+    "@matter/main": "0.17.9",
+    "@project-chip/matter.js": "0.17.9"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

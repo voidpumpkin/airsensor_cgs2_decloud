@@ -201,10 +201,36 @@ Note: sometimes the QingSnow2App start up before the WiFi connects, in which cas
 
 
 
+# Matter over WiFi
+
+Once you have a root shell, you can also make the CGS2 a **native Matter Air
+Quality Sensor** so its readings show up in Apple Home, Home Assistant, Google... Over WiFi only , no Bluetooth.
+
+The device is a Rockchip PX30 (aarch64) running Buildroot / glibc 2.29, and it
+turns out stock **Node.js 20** runs on it unmodified. So instead of
+cross-compiling the C++ Matter SDK we run [matter.js](https://github.com/matter-js/matter.js):
+a ~90 MB Node process that tails QingSnow2App's SQLite history DB
+(`/data/etc/Snow2.db`, read-only) and mirrors the latest CO2 / PM2.5 / PM10 /
+temperature / humidity / TVOC values into a Matter `AirQualitySensor` endpoint.
+QingSnow2App and the MQTT logging above keep running untouched.
+
+Apple Home always wants **BLE for the first commissioning**, which this device
+can't do. But we can trick it. Commission it on-network once with the little `qp-ctl`
+controller (in `tools/`), then open a commissioning window and add it to Apple Home
+as a *second* admin - that join goes over IP, no BLE required.
+
+**Start here:** [`DEPLOY.md`](DEPLOY.md) - a copy-paste, end-to-end guide from a
+freshly de-clouded device (including setting up SSH keys) to sensors in Apple
+Home. Component-level references: [`matter/README.md`](matter/README.md) (the
+bridge) and [`tools/README.md`](tools/README.md) (commissioning / Apple Home).
+
+![matter](img/cgs2_matter.png)  
+
 # References
 
  - [Robert Ying's writeup](https://robertying.com/post/qingping-cgs1-home-assistant/)
  - [Docker-compose starting repo](https://github.com/Miceuz/docker-compose-mosquitto-influxdb-telegraf-grafana)
+ - [matter.js](https://github.com/matter-js/matter.js)
 
 # Other notes
 

@@ -1,0 +1,109 @@
+#!/bin/sh
+#
+# S60matter - run the Qingping CGS2 Matter bridge under a tiny supervisor.
+#
+# Installed to /etc/init.d/S60matter by matter/deploy.sh. busybox rcS calls this
+# with "start" at boot (after S40network / S41dhcpcd); rcK calls it with "stop".
+#
+# Everything it needs lives on the persistent /data partition. The two paths
+# below are rewritten by deploy.sh.
+
+NODE_PREFIX=/data/node
+APP_DIR=/data/matter-app
+
+NODE="$NODE_PREFIX/bin/node"
+APP="$APP_DIR/src/qp-air-quality.mjs"
+STATE_DIR=/data/matter
+LOG="$STATE_DIR/qp-matter.log"
+SUP_PID="/var/run/qp-matter.sup"
+NODE_OPTS="--max-old-space-size=96"
+LOG_MAX=5242880          # rotate log past ~5 MiB
+
+export NODE_PREFIX APP_DIR
+[ -d "$NODE_PREFIX/lib" ] && export LD_LIBRARY_PATH="$NODE_PREFIX/lib:$LD_LIBRARY_PATH"
+
+# matter.js logging -> plain text (no ANSI) at info level, into the same log file.
+export MATTER_LOG_LEVEL="${MATTER_LOG_LEVEL:-info}"
+export MATTER_LOG_FORMAT="${MATTER_LOG_FORMAT:-plain}"
+# App config (see src/config.mjs). Storage MUST be on the persistent partition.
+export QP_STORAGE_PATH="${QP_STORAGE_PATH:-/data/matter}"
+export QP_DB_PATH="${QP_DB_PATH:-/data/etc/Snow2.db}"
+export QP_SQLITE_BIN="${QP_SQLITE_BIN:-/usr/bin/sqlite3}"
+
+wait_for_net() {
+    i=0
+    while [ "$i" -lt 60 ]; do
+        ip addr show wlan0 2>/dev/null | grep -q "inet " && return 0
+        sleep 2
+        i=$((i + 2))
+    done
+    return 1
+}
+
+supervise() {
+    while true; do
+        [ -f "$LOG" ] && [ "$(wc -c < "$LOG" 2>/dev/null || echo 0)" -gt "$LOG_MAX" ] && mv "$LOG" "$LOG.1"
+        echo "[S60matter] $(date) starting: $NODE $NODE_OPTS $APP" >> "$LOG"
+        start=$(date +%s)
+        "$NODE" $NODE_OPTS "$APP" >> "$LOG" 2>&1
+        rc=$?
+        run=$(( $(date +%s) - start ))
+        echo "[S60matter] $(date) node exited rc=$rc after ${run}s" >> "$LOG"
+        # Fast-crash backoff so we don't spin.
+        if [ "$run" -lt 60 ]; then sleep 15; else sleep 3; fi
+    done
+}
+
+start() {
+    if [ -f "$SUP_PID" ] && kill -0 "$(cat "$SUP_PID" 2>/dev/null)" 2>/dev/null; then
+        echo "qp-matter: already running (pid $(cat "$SUP_PID"))"
+        return 0
+    fi
+    [ -f "$NODE" ] || { echo "qp-matter: $NODE not found"; return 1; }
+    [ -f "$APP" ] || { echo "qp-matter: $APP not found"; return 1; }
+    mkdir -p "$STATE_DIR"
+    # The userdata (ext2) partition's boot-time fsck -y has been observed to
+    # mangle file modes (drop the exec bit on node, drop the search bit on our
+    # state dirs). Re-assert sane modes on every start. (We also drop
+    # /.skip_fsck to stop the mangling at the source - see README.)
+    chmod 0755 "$NODE" 2>/dev/null
+    chmod -R u+rwX,go+rX "$NODE_PREFIX" "$APP_DIR" "$STATE_DIR" 2>/dev/null
+    printf "Starting qp-matter: "
+    ( wait_for_net || echo "[S60matter] $(date) network wait timed out, starting anyway" >> "$LOG"
+      supervise ) &
+    echo $! > "$SUP_PID"
+    echo "OK (pid $(cat "$SUP_PID"))"
+}
+
+stop() {
+    printf "Stopping qp-matter: "
+    if [ -f "$SUP_PID" ]; then
+        kill "$(cat "$SUP_PID" 2>/dev/null)" 2>/dev/null
+        rm -f "$SUP_PID"
+    fi
+    # kill the node child too
+    for p in $(pidof node 2>/dev/null); do
+        grep -q "qp-air-quality" "/proc/$p/cmdline" 2>/dev/null && kill "$p" 2>/dev/null
+    done
+    echo "OK"
+}
+
+case "$1" in
+    start) start ;;
+    stop) stop ;;
+    restart | reload) stop; sleep 1; start ;;
+    status)
+        if [ -f "$SUP_PID" ] && kill -0 "$(cat "$SUP_PID" 2>/dev/null)" 2>/dev/null; then
+            echo "qp-matter: running (supervisor pid $(cat "$SUP_PID"))"
+            pidof node 2>/dev/null | tr ' ' '\n' | while read -r p; do
+                grep -q "qp-air-quality" "/proc/$p/cmdline" 2>/dev/null && echo "  node pid $p"
+            done
+        else
+            echo "qp-matter: stopped"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac

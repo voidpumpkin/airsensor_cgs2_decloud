@@ -1,0 +1,9 @@
+.DS_Store
+*.swp
+
+# Matter bridge / controller (matter/, tools/)
+node_modules/
+dist/
+matter/.matter/
+tools/.matter-ctl/
+*.log
